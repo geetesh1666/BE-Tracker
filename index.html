@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1f3a">
+  <meta name="description" content="BETracker Pro - sales, expenses, dealers and reports for Hari Agencies">
+  <title>BETracker Pro | Hari Agencies</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="BETracker">
+</head>
+<body>
+
+  <div id="loadingBar" class="loading-bar hidden" aria-hidden="true"></div>
+
+  <!-- ===================== TOP BAR ===================== -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button id="sidebarToggle" class="icon-btn" type="button" aria-label="Collapse or expand the menu" title="Collapse or expand the menu">
+        <i data-lucide="panel-left"></i>
+      </button>
+      <div class="brand">
+        <div class="brand-logo"><i data-lucide="droplets"></i></div>
+        <div class="brand-text">
+          <div class="brand-name">BETracker Pro</div>
+          <div class="brand-sub">Hari Agencies</div>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="today-chip" id="todayText"></span>
+      <button id="refreshBtn" class="btn btn-top" type="button" aria-label="Refresh data from Google Sheets">
+        <i data-lucide="refresh-cw"></i><span class="hide-sm">Refresh Data</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===================== SIDEBAR (desktop) ===================== -->
+  <aside class="sidebar" id="sidebar">
+    <nav class="side-nav" aria-label="Main navigation">
+      <button class="nav-item active" type="button" data-view="dashboard"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></button>
+      <button class="nav-item" type="button" data-view="sales"><i data-lucide="shopping-cart"></i><span>Sales Management</span></button>
+      <button class="nav-item" type="button" data-view="expenses"><i data-lucide="wallet"></i><span>Expense Management</span></button>
+      <button class="nav-item" type="button" data-view="dealers"><i data-lucide="users"></i><span>Dealer Management</span></button>
+      <button class="nav-item" type="button" data-view="reports"><i data-lucide="file-text"></i><span>Reports</span></button>
+    </nav>
+  </aside>
+
+  <!-- ===================== MAIN CONTENT ===================== -->
+  <main class="main" id="main">
+
+    <div id="globalError" class="alert alert-error hidden" role="alert">
+      <span id="globalErrorText"></span>
+    </div>
+
+    <!-- ---------- DASHBOARD ---------- -->
+    <section id="view-dashboard" class="view active" aria-label="Dashboard">
+      <div class="page-head">
+        <div>
+          <h1>Dashboard</h1>
+          <p class="muted small" id="periodLabel"></p>
+        </div>
+        <div class="period-bar">
+          <label class="sr-only" for="dashPeriod">Reporting period</label>
+          <select id="dashPeriod" class="input">
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="week">This Week</option>
+            <option value="month" selected>This Month</option>
+            <option value="prevMonth">Previous Month</option>
+            <option value="year">This Year</option>
+            <option value="custom">Custom Date Range</option>
+            <option value="all">All Time</option>
+          </select>
+          <div id="dashCustom" class="custom-range hidden">
+            <label class="sr-only" for="dashFrom">From date</label>
+            <input type="date" id="dashFrom" class="input" aria-label="From date">
+            <label class="sr-only" for="dashTo">To date</label>
+            <input type="date" id="dashTo" class="input" aria-label="To date">
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <article class="stat-card navy">
+          <div class="stat-label">Total Sales</div>
+          <div class="stat-value" id="stTotalSales">₹0.00</div>
+        </article>
+        <article class="stat-card green">
+          <div class="stat-label">Paid Sales</div>
+          <div class="stat-value" id="stPaidSales">₹0.00</div>
+        </article>
+        <article class="stat-card red">
+          <div class="stat-label">Pending Sales</div>
+          <div class="stat-value" id="stPendingSales">₹0.00</div>
+          <div class="stat-note">Not Paid</div>
+        </article>
+        <article class="stat-card orange">
+          <div class="stat-label">Total Recorded Expenses</div>
+          <div class="stat-value" id="stTotalExpenses">₹0.00</div>
+          <div class="stat-note">Paid + Not Paid</div>
+        </article>
+        <article class="stat-card green">
+          <div class="stat-label">Paid Expenses</div>
+          <div class="stat-value" id="stPaidExpenses">₹0.00</div>
+        </article>
+        <article class="stat-card red">
+          <div class="stat-label">Unpaid Expenses</div>
+          <div class="stat-value" id="stUnpaidExpenses">₹0.00</div>
+          <div class="stat-note">Not Paid</div>
+        </article>
+        <article class="stat-card navy">
+          <div class="stat-label">Sales Minus Recorded Expenses</div>
+          <div class="stat-value" id="stNet">₹0.00</div>
+          <div class="stat-note">Not actual profit</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-label">Water Cans Sold</div>
+          <div class="stat-value" id="stCans">0</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-label">Active Dealers</div>
+          <div class="stat-value" id="stDealers">0</div>
+          <div class="stat-note">With sales in period</div>
+        </article>
+        <article class="stat-card red">
+          <div class="stat-label">Dealers With Balances</div>
+          <div class="stat-value" id="stOutstandingDealers">0</div>
+          <div class="stat-note">All time</div>
+        </article>
+      </div>
+
+      <div class="chart-grid">
+        <div class="card">
+          <h3>Sales Over Time</h3>
+          <div class="chart-box"><canvas id="chartSales" aria-label="Bar chart of sales over time"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Expenses Over Time</h3>
+          <div class="chart-box"><canvas id="chartExpenses" aria-label="Bar chart of expenses over time"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Paid vs Pending Sales</h3>
+          <div class="chart-box"><canvas id="chartSalesStatus" aria-label="Doughnut chart of paid and pending sales"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Paid vs Unpaid Expenses</h3>
+          <div class="chart-box"><canvas id="chartExpenseStatus" aria-label="Doughnut chart of paid and unpaid expenses"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- SALES ---------- -->
+    <section id="view-sales" class="view" aria-label="Sales management">
+      <div class="page-head">
+        <div>
+          <h1>Sales Management</h1>
+          <p class="muted small">Record water can sales and track payments.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><i data-lucide="plus-circle"></i> Add New Sale</h2></div>
+        <form id="saleForm" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="saleDate">Sale Date</label>
+              <input type="date" id="saleDate" class="input" required>
+            </div>
+            <div class="field">
+              <label for="saleDealer">Dealer Name</label>
+              <input type="text" id="saleDealer" class="input" list="dealerList" maxlength="80" placeholder="e.g. Sri Lakshmi Stores" autocomplete="off" required>
+              <datalist id="dealerList"></datalist>
+            </div>
+            <div class="field">
+              <label for="saleQty">Quantity of Water Cans</label>
+              <input type="number" id="saleQty" class="input" min="1" step="1" inputmode="numeric" placeholder="e.g. 25" required>
+            </div>
+            <div class="field">
+              <label for="salePrice">Price Per Can (₹)</label>
+              <input type="number" id="salePrice" class="input" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 30" required>
+            </div>
+            <div class="field">
+              <span class="field-label">Total (calculated)</span>
+              <div class="total-box" id="saleTotalDisplay" aria-live="polite">₹0.00</div>
+            </div>
+            <div class="field">
+              <label for="salePayment">Payment Status</label>
+              <select id="salePayment" class="input">
+                <option value="Paid">Paid</option>
+                <option value="Not Paid">Not Paid</option>
+              </select>
+            </div>
+          </div>
+          <p class="form-msg" id="saleMsg" role="status"></p>
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost" id="saleReset">Clear</button>
+            <button type="submit" class="btn btn-primary" id="saleSubmit"><i data-lucide="save"></i> Save Sale</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Sales History</h2>
+          <div class="btn-row">
+            <button class="btn btn-outline btn-sm" type="button" id="saleCsv"><i data-lucide="download"></i> CSV</button>
+            <button class="btn btn-outline btn-sm" type="button" id="salePrint"><i data-lucide="printer"></i> Print</button>
+          </div>
+        </div>
+        <div class="filter-grid">
+          <div class="field">
+            <label for="saleSearch">Search dealer</label>
+            <input type="search" id="saleSearch" class="input" placeholder="Type a dealer name">
+          </div>
+          <div class="field">
+            <label for="saleFrom">From date</label>
+            <input type="date" id="saleFrom" class="input">
+          </div>
+          <div class="field">
+            <label for="saleTo">To date</label>
+            <input type="date" id="saleTo" class="input">
+          </div>
+          <div class="field">
+            <label for="saleStatusFilter">Payment status</label>
+            <select id="saleStatusFilter" class="input">
+              <option value="">All statuses</option>
+              <option value="Paid">Paid</option>
+              <option value="Not Paid">Not Paid</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="saleSort">Sort by</label>
+            <select id="saleSort" class="input">
+              <option value="date-desc">Date: newest first</option>
+              <option value="date-asc">Date: oldest first</option>
+              <option value="amount-desc">Amount: high to low</option>
+              <option value="amount-asc">Amount: low to high</option>
+            </select>
+          </div>
+        </div>
+        <div class="list-summary">
+          <span id="saleCount"></span>
+          <strong id="saleFilteredTotal"></strong>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Sale ID</th>
+                <th>Date</th>
+                <th>Dealer</th>
+                <th class="num">Qty</th>
+                <th class="num">Price</th>
+                <th class="num">Total</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="saleTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- EXPENSES ---------- -->
+    <section id="view-expenses" class="view" aria-label="Expense management">
+      <div class="page-head">
+        <div>
+          <h1>Expense Management</h1>
+          <p class="muted small">Record expenses and mark whether each one is Paid or Not Paid.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2><i data-lucide="plus-circle"></i> Add New Expense</h2></div>
+        <form id="expenseForm" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="expDate">Expense Date</label>
+              <input type="date" id="expDate" class="input" required>
+            </div>
+            <div class="field">
+              <label for="expCategory">Expense Category</label>
+              <select id="expCategory" class="input" required></select>
+            </div>
+            <div class="field">
+              <label for="expDescription">Description</label>
+              <input type="text" id="expDescription" class="input" maxlength="200" placeholder="e.g. Diesel for delivery van" required>
+            </div>
+            <div class="field">
+              <label for="expAmount">Amount (₹)</label>
+              <input type="number" id="expAmount" class="input" min="0.01" step="0.01" inputmode="decimal" placeholder="e.g. 1500" required>
+            </div>
+            <div class="field">
+              <label for="expMethod">Payment Method</label>
+              <select id="expMethod" class="input" required></select>
+            </div>
+            <div class="field">
+              <label for="expStatus">Payment Status</label>
+              <select id="expStatus" class="input" required>
+                <option value="Paid">Paid</option>
+                <option value="Not Paid">Not Paid</option>
+              </select>
+            </div>
+          </div>
+          <p class="form-msg" id="expMsg" role="status"></p>
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost" id="expReset">Clear</button>
+            <button type="submit" class="btn btn-primary" id="expSubmit"><i data-lucide="save"></i> Save Expense</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="stat-grid three">
+        <article class="stat-card green">
+          <div class="stat-label">Paid Expenses</div>
+          <div class="stat-value" id="expPaidTotal">₹0.00</div>
+          <div class="stat-note">For current filters</div>
+        </article>
+        <article class="stat-card red">
+          <div class="stat-label">Unpaid Expenses</div>
+          <div class="stat-value" id="expUnpaidTotal">₹0.00</div>
+          <div class="stat-note">For current filters</div>
+        </article>
+        <article class="stat-card orange">
+          <div class="stat-label">Total Recorded Expenses</div>
+          <div class="stat-value" id="expRecordedTotal">₹0.00</div>
+          <div class="stat-note">Paid + Unpaid</div>
+        </article>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Expense History</h2>
+          <div class="btn-row">
+            <button class="btn btn-outline btn-sm" type="button" id="expCsv"><i data-lucide="download"></i> CSV</button>
+            <button class="btn btn-outline btn-sm" type="button" id="expPrint"><i data-lucide="printer"></i> Print</button>
+          </div>
+        </div>
+        <div class="filter-grid">
+          <div class="field">
+            <label for="expSearch">Search description or category</label>
+            <input type="search" id="expSearch" class="input" placeholder="Type to search">
+          </div>
+          <div class="field">
+            <label for="expFrom">From date</label>
+            <input type="date" id="expFrom" class="input">
+          </div>
+          <div class="field">
+            <label for="expTo">To date</label>
+            <input type="date" id="expTo" class="input">
+          </div>
+          <div class="field">
+            <label for="expCategoryFilter">Category</label>
+            <select id="expCategoryFilter" class="input"></select>
+          </div>
+          <div class="field">
+            <label for="expMethodFilter">Payment method</label>
+            <select id="expMethodFilter" class="input"></select>
+          </div>
+          <div class="field">
+            <label for="expStatusFilter">Payment status</label>
+            <select id="expStatusFilter" class="input">
+              <option value="">All statuses</option>
+              <option value="Paid">Paid</option>
+              <option value="Not Paid">Not Paid</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="expSort">Sort by</label>
+            <select id="expSort" class="input">
+              <option value="date-desc">Date: newest first</option>
+              <option value="date-asc">Date: oldest first</option>
+              <option value="amount-desc">Amount: high to low</option>
+              <option value="amount-asc">Amount: low to high</option>
+            </select>
+          </div>
+        </div>
+        <div class="list-summary"><span id="expCount"></span></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Expense ID</th>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th class="num">Amount</th>
+                <th>Method</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="expTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- DEALERS ---------- -->
+    <section id="view-dealers" class="view" aria-label="Dealer management">
+      <div class="page-head">
+        <div>
+          <h1>Dealer Management</h1>
+          <p class="muted small">Dealers are built automatically from your sales records. Outstanding balance = unpaid sales.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>All Dealers</h2>
+        </div>
+        <div class="filter-grid one">
+          <div class="field">
+            <label for="dealerSearch">Search dealers</label>
+            <input type="search" id="dealerSearch" class="input" placeholder="Type a dealer name">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Dealer</th>
+                <th class="num">Total Sales</th>
+                <th class="num">Paid</th>
+                <th class="num">Outstanding</th>
+                <th class="num">Transactions</th>
+                <th>Most Recent Sale</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="dealerTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card hidden" id="dealerDetail">
+        <div class="card-head">
+          <h2 id="dealerName">Dealer</h2>
+          <div class="btn-row">
+            <button class="btn btn-outline btn-sm" type="button" id="dealerCsv"><i data-lucide="download"></i> Statement CSV</button>
+            <button class="btn btn-outline btn-sm" type="button" id="dealerPrint"><i data-lucide="printer"></i> Print</button>
+            <button class="btn btn-ghost btn-sm" type="button" id="dealerClose"><i data-lucide="x"></i> Close</button>
+          </div>
+        </div>
+        <div class="filter-grid">
+          <div class="field">
+            <label for="dealerFrom">From date</label>
+            <input type="date" id="dealerFrom" class="input">
+          </div>
+          <div class="field">
+            <label for="dealerTo">To date</label>
+            <input type="date" id="dealerTo" class="input">
+          </div>
+        </div>
+        <div class="stat-grid four">
+          <article class="stat-card navy">
+            <div class="stat-label">Total Purchases</div>
+            <div class="stat-value" id="dTotal">₹0.00</div>
+            <div class="stat-note">Selected dates</div>
+          </article>
+          <article class="stat-card green">
+            <div class="stat-label">Paid Amount</div>
+            <div class="stat-value" id="dPaid">₹0.00</div>
+            <div class="stat-note">Selected dates</div>
+          </article>
+          <article class="stat-card red">
+            <div class="stat-label">Outstanding Balance</div>
+            <div class="stat-value" id="dOutstanding">₹0.00</div>
+            <div class="stat-note">All time</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">Transactions</div>
+            <div class="stat-value" id="dCount">0</div>
+            <div class="stat-note">Selected dates</div>
+          </article>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Sale ID</th>
+                <th>Date</th>
+                <th>Dealer</th>
+                <th class="num">Qty</th>
+                <th class="num">Price</th>
+                <th class="num">Total</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="dealerHistoryTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- REPORTS ---------- -->
+    <section id="view-reports" class="view" aria-label="Reports">
+      <div class="page-head">
+        <div>
+          <h1>Reports</h1>
+          <p class="muted small">Generate a report, then download it as CSV or print it (choose "Save as PDF" in the print window).</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="form-grid">
+          <div class="field report-type">
+            <label for="reportType">Report type</label>
+            <select id="reportType" class="input">
+              <optgroup label="Sales">
+                <option value="sales-daily">Daily Sales Report</option>
+                <option value="sales-monthly">Monthly Sales Report</option>
+                <option value="sales-yearly">Yearly Sales Report</option>
+                <option value="sales-custom">Custom Date Range Sales Report</option>
+                <option value="sales-paid">Paid Sales Report</option>
+                <option value="sales-unpaid">Unpaid Sales Report</option>
+              </optgroup>
+              <optgroup label="Expenses">
+                <option value="exp-daily">Daily Expense Report</option>
+                <option value="exp-monthly">Monthly Expense Report</option>
+                <option value="exp-yearly">Yearly Expense Report</option>
+                <option value="exp-paid">Paid Expense Report</option>
+                <option value="exp-unpaid">Unpaid Expense Report</option>
+              </optgroup>
+              <optgroup label="Dealers and summary">
+                <option value="dealer-outstanding">Dealer Outstanding Report</option>
+                <option value="dealer-statement">Individual Dealer Statement</option>
+                <option value="financial">Financial Summary Report</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="field hidden" id="rf-date">
+            <label for="rDate">Date</label>
+            <input type="date" id="rDate" class="input">
+          </div>
+          <div class="field hidden" id="rf-month">
+            <label for="rMonth">Month</label>
+            <input type="month" id="rMonth" class="input">
+          </div>
+          <div class="field hidden" id="rf-year">
+            <label for="rYear">Year</label>
+            <input type="number" id="rYear" class="input" min="2000" max="2100" step="1" inputmode="numeric">
+          </div>
+          <div class="field hidden" id="rf-dealer">
+            <label for="rDealer">Dealer</label>
+            <select id="rDealer" class="input"></select>
+          </div>
+
+          <div class="range-group hidden" id="rf-range">
+            <div class="field">
+              <label for="rFrom">From date (optional)</label>
+              <input type="date" id="rFrom" class="input">
+            </div>
+            <div class="field">
+              <label for="rTo">To date (optional)</label>
+              <input type="date" id="rTo" class="input">
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline" id="rCsv" disabled><i data-lucide="download"></i> Download CSV</button>
+          <button type="button" class="btn btn-outline" id="rPrint" disabled><i data-lucide="printer"></i> Print / Save PDF</button>
+          <button type="button" class="btn btn-primary" id="rGenerate"><i data-lucide="file-text"></i> Generate Report</button>
+        </div>
+      </div>
+
+      <div class="card" id="reportCard">
+        <div id="reportOutput">
+          <div class="empty-state">
+            <i data-lucide="file-text"></i>
+            <p>Choose a report type above and click Generate Report.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================== MOBILE BOTTOM NAVIGATION ===================== -->
+  <nav class="bottom-nav" aria-label="Mobile navigation">
+    <button class="tab-item active" type="button" data-view="dashboard"><i data-lucide="layout-dashboard"></i><span>Home</span></button>
+    <button class="tab-item" type="button" data-view="sales"><i data-lucide="shopping-cart"></i><span>Sales</span></button>
+    <button class="tab-item" type="button" data-view="expenses"><i data-lucide="wallet"></i><span>Expenses</span></button>
+    <button class="tab-item" type="button" data-view="dealers"><i data-lucide="users"></i><span>Dealers</span></button>
+    <button class="tab-item" type="button" data-view="reports"><i data-lucide="file-text"></i><span>Reports</span></button>
+  </nav>
+
+  <!-- ===================== EXPENSE EDIT MODAL ===================== -->
+  <div class="modal hidden" id="expenseModal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <div class="modal-box">
+      <div class="card-head">
+        <h2 id="editTitle">Edit Expense</h2>
+        <button class="icon-btn dark" type="button" id="expenseModalClose" aria-label="Close"><i data-lucide="x"></i></button>
+      </div>
+      <form id="editForm" novalidate>
+        <input type="hidden" id="editId">
+        <div class="form-grid two">
+          <div class="field">
+            <label for="editDate">Expense Date</label>
+            <input type="date" id="editDate" class="input" required>
+          </div>
+          <div class="field">
+            <label for="editCategory">Expense Category</label>
+            <select id="editCategory" class="input" required></select>
+          </div>
+          <div class="field full">
+            <label for="editDescription">Description</label>
+            <input type="text" id="editDescription" class="input" maxlength="200" required>
+          </div>
+          <div class="field">
+            <label for="editAmount">Amount (₹)</label>
+            <input type="number" id="editAmount" class="input" min="0.01" step="0.01" inputmode="decimal" required>
+          </div>
+          <div class="field">
+            <label for="editMethod">Payment Method</label>
+            <select id="editMethod" class="input" required></select>
+          </div>
+          <div class="field">
+            <label for="editStatus">Payment Status</label>
+            <select id="editStatus" class="input" required>
+              <option value="Paid">Paid</option>
+              <option value="Not Paid">Not Paid</option>
+            </select>
+          </div>
+        </div>
+        <p class="form-msg" id="editMsg" role="status"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="editCancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="editSave"><i data-lucide="save"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== CONFIRMATION DIALOG ===================== -->
+  <div class="modal hidden" id="confirmModal" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
+    <div class="modal-box small-box">
+      <h2 id="confirmTitle">Are you sure?</h2>
+      <p id="confirmMessage" class="muted"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="confirmCancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmOk">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notifications -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Hidden area used only when printing -->
+  <div id="printArea" class="print-area" aria-hidden="true"></div>
+
+  <!-- Icons and charts (CDN) -->
+  <script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="script.js"></script>
+
+  <!-- Offline app shell: registers the service worker (sw.js) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
